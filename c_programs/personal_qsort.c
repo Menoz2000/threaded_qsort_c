@@ -56,14 +56,16 @@ bool contain_same_number (long int *non_sorted, long int *sorted, long int n){
         return 0;
     }
 
-
     for (int i = 0; i < n ; i++){
         sorted_correctly[i] = non_sorted[i];
+        //printf("%ld", sorted_correctly[i]);
+        //printf("%ld\n", non_sorted[i]);
     }
 
     qsort(sorted_correctly, n, sizeof(long int), compare);
 
     for (int i = 0; i < n ; i++){
+        //printf("%ld = %ld\n", sorted_correctly[i], sorted[i]);
         if (sorted_correctly[i] != sorted[i]){
             free(sorted_correctly);
             return 0;
@@ -71,7 +73,7 @@ bool contain_same_number (long int *non_sorted, long int *sorted, long int n){
     }
 
     free(sorted_correctly);
-    return 0;
+    return 1;
 
     
 }
@@ -87,25 +89,23 @@ int main(){
 
     printf("Insert the number of elements to have inside the array: ");
     n = get_safe_long();
-    printf("\n");
     if (n == -1){
         printf("Error: Non valid input\n");
     }
 
     printf("Insert the maximum number value to insert in the array: ");
     range_elem_array = get_safe_long();
-    printf("\n");
     if (range_elem_array == -1){
         printf("Error: Non valid input\n");
     }
 
-    *arr = (long int *)malloc(n * sizeof(long int));
+    arr = (long int *)malloc(n * sizeof(long int));
     if (arr == NULL) {
         printf("Errore nell'allocazione della memoria.\n");
         return 1;
     }
 
-    *arr_cpy = (long int *)malloc(n * sizeof(long int));
+    arr_cpy = (long int *)malloc(n * sizeof(long int));
     if (arr_cpy == NULL) {
         printf("Errore nell'allocazione della memoria.\n");
         return 1;
@@ -114,19 +114,21 @@ int main(){
     // Populate the array with random values
     for (int i = 0; i < n; i++) {
         arr[i] = rand() % range_elem_array; 
+        arr_cpy[i] = arr[i];
         //printf("- %ld -", arr[i]);
     }
-    memcpy(arr_cpy, arr, sizeof(arr));// Create an array copy
 
     printf("\n");
 
     threaded_quicksort(arr, n, sizeof(long int), compare);
 
+    qsort(arr, n, sizeof(long int), compare); //to remove after threaded_quicksort implementation
+
     // Print the sorted array
     for (long int i = 0; i < n; i++) {
         printf("%ld ", arr[i]);
     }
-    print("\n");
+    printf("\n");
 
     // Verify if the array is sorted
     if (is_sorted(arr, n)){
@@ -147,4 +149,4 @@ int main(){
     return 0;
 }
 
-//TODO controllo array elementi prima e dopo, comincia funzione qsort
+//TODO comincia funzione qsort
