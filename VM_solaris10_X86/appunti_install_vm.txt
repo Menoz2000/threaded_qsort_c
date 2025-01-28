@@ -1,0 +1,56 @@
+Installation of Solaris 10 1/13 Appliance in VirtualBox
+------------------------------------------------------------
+
+Requirements:
+X86 system with a minimum of 1.5GB RAM
+
+A minimum of 4 GB free disk space is needed for initial installation. 
+The available space on the virtual disk can grow to a maximum of 32GB.
+
+
+Instructions:
+------------
+1) Download the Solaris10_1-13_VM.ova file. Be sure the .ova suffix 
+does not get removed from the filename when downloading the file.
+
+2) Start VirtualBox application.
+
+3) From File Menu, select Import Appliance.
+
+4) Select the Solaris10_1-13_VM.ova file from the location
+that you downloaded it to in step 1.
+
+5) In the Appliance Import Wizard, change Appliance Import Settings 
+to suit your system:
+
+RAM: Systems with more RAM should increase this amount (up to half of
+available RAM is recommended).
+
+Virtual Disk Image:
+Select a directory in which the image size can expand (up to 32GB).
+
+6) Start system image.  Proceed through configuration screens such
+as network, hostname and root password.
+
+NOTE: The "oracle" user has already been created for you. 
+
+7) Either log in as "root" with the password you created in the 
+previous step or log in as user "oracle", password "oracle".
+Changing the password for the user "oracle" is recommended. 
+
+
+Notes:
+-----
+
+* A message may appear which states that a newer version of Guest Additions
+  is available.  See the following link for more information on Guest Additions:
+        http://www.virtualbox.org/manual/ch04.html#id490876
+
+* Link to Solaris 10 1/13 Third-Party License information:
+	http://docs.oracle.com/cd/E23823_01/html/E25013/index.html
+
+* Refer to the Critical Patch Updates, Security Alerts, and Third Party 
+  Bulletin page: 
+	http://www.oracle.com/technetwork/topics/security/alerts-086861.html
+  for information on the latest patches/updates. 
+

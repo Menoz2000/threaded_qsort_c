@@ -2,18 +2,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>          // Global variables and macro to manage errors in std libraries
+#include <errno.h>
 #include <stdbool.h>
 
+// Structure to hold the arguments for the quicksort function
 typedef struct {
-    void *array;
-    long int left;
-    long int right;
-    size_t width;
-    int (*compar)(const void *, const void *);
-    long int slice_thresh;
+    void *array;                       // Pointer to the array to sort
+    long int left;                     // Left boundary of the current partition
+    long int right;                    // Right boundary of the current partition
+    size_t width;                      // Size of each element in the array
+    int (*compar)(const void *, const void *); // Comparison function
+    long int slice_thresh;             // Threshold for switching to sequential sort
 } sort_args_t;
 
+// Swaps two elements in the array
 void swap(void *array, long int i, long int j, size_t width) {
     unsigned char temp[width];
     memcpy(temp, (unsigned char *)array + i * width, width);
@@ -21,6 +23,7 @@ void swap(void *array, long int i, long int j, size_t width) {
     memcpy((unsigned char *)array + j * width, temp, width);
 }
 
+// Partitions the array and selects a pivot using the median-of-three strategy
 int partition(void *array, long int left, long int right, size_t width, int (*compar)(const void *, const void *)) {
     /*_____________________________________________________________________________________________*/
     //last array element aas pivot
@@ -36,7 +39,7 @@ int partition(void *array, long int left, long int right, size_t width, int (*co
     void *b=(unsigned char *)array + mid *width;
     void *c=(unsigned char *)array + right *width;
     //printf("a: %ld; b: %ld; c: %ld\n", *(long int *)a, *(long int *)b, *(long int *)c);
-    //ordwring the three elements to find the median
+    //ordering the three elements to find the median
     if (compar(a, b) > 0) swap (array, left, mid, width);
     if (compar(a, c) > 0) swap (array, left, right, width);
     if (compar(b, c) > 0) swap (array, mid, right, width);
@@ -65,10 +68,10 @@ int partition(void *array, long int left, long int right, size_t width, int (*co
     }
 
     swap(array, i + 1, right, width);
-    return i + 1;
-
+    return i + 1; // Return the final pivot position
 }
 
+// Recursive quicksort function that uses threads
 void *quicksort(void *args) {
     sort_args_t *sargs = (sort_args_t *)args;
     void *array = sargs->array;
@@ -77,11 +80,11 @@ void *quicksort(void *args) {
     size_t width = sargs->width;
     int (*compar)(const void *, const void *) = sargs->compar;
 
-
     /*for (int i=0; i<20; i++){
         printf("ciao\n");
     }*/
 
+    // Base case: Switch to sequential sorting if the partition is below the threshold
     if (right - left < sargs->slice_thresh) {
         printf("Sort sequentially\n");
         // Sort sequentially
@@ -91,8 +94,10 @@ void *quicksort(void *args) {
     }
 
     printf("Sort Using threads\n");
+    // Partition the array and get the pivot index
     long int pivotIndex = partition(array, left, right, width, compar);
     
+    // Prepare arguments for the left and right partitions
     sort_args_t *leftArgs = malloc(sizeof(sort_args_t));
     sort_args_t *rightArgs = malloc(sizeof(sort_args_t));
     if (!leftArgs || !rightArgs) {
@@ -103,17 +108,20 @@ void *quicksort(void *args) {
     *leftArgs = (sort_args_t){array, left, pivotIndex - 1, width, compar, sargs->slice_thresh};
     *rightArgs = (sort_args_t){array, pivotIndex + 1, right, width, compar, sargs->slice_thresh};
 
+    // Create threads for the left and right partitions
     pthread_t leftThread, rightThread;
     pthread_create(&leftThread, NULL, quicksort, leftArgs);
     pthread_create(&rightThread, NULL, quicksort, rightArgs);
 
+    // Wait for the threads to complete
     pthread_join(leftThread, NULL);
     pthread_join(rightThread, NULL);
 
-    free(sargs); // Free dynamically allocated args
+    free(sargs); // Free the dynamically allocated args
     return NULL;
 }
 
+// Wrapper function for the threaded quicksort
 void threaded_quicksort(void *array, long int n, size_t width, int (*compar)(const void *, const void *), long int slice_tresh) {
     sort_args_t *args = malloc(sizeof(sort_args_t));
     if (!args) {
@@ -125,8 +133,7 @@ void threaded_quicksort(void *array, long int n, size_t width, int (*compar)(con
     quicksort(args);
 }
 
-
-
+// Reads a safe long integer from user input
 long int get_safe_long() {
     char buffer[100];       // Input Buffer
     char *endptr;           // Pointer to find residues inside the string
@@ -141,7 +148,7 @@ long int get_safe_long() {
     char *newline = strchr(buffer, '\n');
     if (newline) *newline = '\0';
 
-    // Reset the global variable errno and convert buffer to log int
+    // Reset the global variable errno and convert buffer to long int
     errno = 0;
     value = strtol(buffer, &endptr, 10);
 
@@ -153,11 +160,13 @@ long int get_safe_long() {
     return value;
 }
 
+// Comparison function for integers
 int compare(const void *a, const void *b) {
     return (*(int *)a - *(int *)b);
 }
 
-bool is_sorted (long int *arr, int n){
+// Checks if the array is sorted
+bool is_sorted(long int *arr, int n) {
     bool is_sorted = true;
     for (long int i = 1; i < n; i++) {
         if (arr[i - 1] > arr[i]) {
@@ -168,109 +177,93 @@ bool is_sorted (long int *arr, int n){
     return is_sorted;
 }
 
-bool contain_same_number (long int *non_sorted, long int *sorted, long int n){
-
+// Verifies that two arrays contain the same elements
+bool contain_same_number(long int *non_sorted, long int *sorted, long int n) {
     long int *sorted_correctly = malloc(n * sizeof(long int));
     if (sorted_correctly == NULL) {
-        printf("Errore nell'allocazione della memoria.\n");
-        return 0;
+        printf("Memory allocation error.\n");
+        return false;
     }
 
-    for (int i = 0; i < n ; i++){
-        sorted_correctly[i] = non_sorted[i];
-        //printf("%ld", sorted_correctly[i]);
-        //printf("%ld\n", non_sorted[i]);
-    }
-
+    memcpy(sorted_correctly, non_sorted, n * sizeof(long int));
     qsort(sorted_correctly, n, sizeof(long int), compare);
 
-    for (int i = 0; i < n ; i++){
-        //printf("%ld = %ld\n", sorted_correctly[i], sorted[i]);
-        if (sorted_correctly[i] != sorted[i]){
+    for (long int i = 0; i < n; i++) {
+        if (sorted_correctly[i] != sorted[i]) {
             free(sorted_correctly);
-            return 0;
+            return false;
         }
     }
 
     free(sorted_correctly);
-    return 1;
-
-    
+    return true;
 }
 
-int main(){
-    long int n;                     //Number of array's elements
-    long int range_elem_array;      // Max number value in the array
-    long int *arr;                  //Array to order
-    long int *arr_cpy;              //Array copy for checks
-    long int slice_tresh;           //Max size of sotto-array
-    
+int main() {
+    long int n, range_elem_array, slice_tresh;
+    long int *arr, *arr_cpy;
 
-    srand(time(NULL));              //Initialize the random number generator
+    srand(time(NULL));
 
+    // Get input from the user
     printf("Insert the number of elements to have inside the array: ");
     n = get_safe_long();
-    while (n < 1){
+    while (n < 1) {
         printf("Error: Non valid input\nRetry: ");
         n = get_safe_long();
     }
 
     printf("Insert the maximum number value to insert in the array: ");
     range_elem_array = get_safe_long();
-    while (range_elem_array < 1){
+    while (range_elem_array < 1) {
         printf("Error: Non valid input\nRetry: ");
         range_elem_array = get_safe_long();
     }
 
     printf("Insert the maximum sotto-array size: ");
     slice_tresh = get_safe_long();
-    while (slice_tresh < 1){
+    while (slice_tresh < 1) {
         printf("Error: Non valid input\nRetry: ");
         slice_tresh = get_safe_long();
     }
 
-    arr = (long int *)malloc(n * sizeof(long int));
-    if (arr == NULL) {
-        printf("Errore nell'allocazione della memoria.\n");
-        return 1;
-    }
-
-    arr_cpy = (long int *)malloc(n * sizeof(long int));
-    if (arr_cpy == NULL) {
-        printf("Errore nell'allocazione della memoria.\n");
+    arr = malloc(n * sizeof(long int));
+    arr_cpy = malloc(n * sizeof(long int));
+    if (!arr || !arr_cpy) {
+        printf("Memory allocation error.\n");
         return 1;
     }
 
     // Populate the array with random values
     printf("Array values:\n[");
-    for (int i = 0; i < n; i++) {
-        arr[i] = rand() % range_elem_array; 
+    for (long int i = 0; i < n; i++) {
+        arr[i] = rand() % range_elem_array;
         arr_cpy[i] = arr[i];
-        printf("- %ld -", arr[i]);
+        printf("%ld ", arr[i]);
     }
-
     printf("]\n\n");
 
+    // Sort the array using threaded quicksort
     threaded_quicksort(arr, n, sizeof(long int), compare, slice_tresh);
 
     // Print the sorted array
+    printf("Sorted array:\n");
     for (long int i = 0; i < n; i++) {
         printf("%ld ", arr[i]);
     }
     printf("\n");
 
-    // Verify if the array is sorted
-    if (is_sorted(arr, n)){
-        printf("The array is sorted\n");
+    // Verify correctness
+    if (is_sorted(arr, n)) {
+        printf("The array is sorted.\n");
     } else {
-        printf("The array is NOT sorted\n");
+        printf("The array is NOT sorted.\n");
     }
 
-    // Verify if the two array contain same numbers
-    if (contain_same_number(arr_cpy, arr, n)){
-        printf("The array is sorted and contain same numbers\n");
+    if (contain_same_number(arr_cpy, arr, n)) {
+        printf("The array is sorted and contains the same elements.\n");
     } else {
-        printf("The array is NOT sorted or not contain same numbers\n");
+        printf("The array is NOT sorted or contains different elements.\n");
     }
 
     free(arr);
